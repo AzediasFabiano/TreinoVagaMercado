@@ -1,104 +1,125 @@
-# Cadastro de informações guardadas em planilha para software in cloud
+#Projeto de IA para ativos da bolsa de valores
 
-#IMPORTAÇÃO DE BIBLIOTECAS
-import selenium
-import pyautogui
-import numpy as np
+from http import server
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+import matplotlib.pyplot as plt
+import MetaTrader5 as mt5
 import pandas as pd
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service
+from datetime import datetime
+import login as login
+import password as password
+import time
 from time import sleep
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import numpy as np
+import pytz
 
 
-df = pd.read_excel('MAN2.xlsx')
-#print(df)
-print(df.columns[:3])
-
-#LISTA DE VARIAVEIS
-link_login = 'https://app.keepfy.com/login'
-link_cadastro = 'https://app.keepfy.com/general-registrations/products/create'    
-email = "@gmail.com"
-senha = ""
-
-#LOGIN NO SITE    
-navegador = webdriver.Chrome(executable_path=r"C:\Users\Usuário\executavel\python install\chromedriver.exe")
-navegador.get(url=link_login)
-print(navegador.title)
-sleep(2)
-
-navegador.find_element(by=By.CSS_SELECTOR, value=".MuiInputBase-root input[name=email]").send_keys(email)
-print("Email OK!")
-sleep(1)
-
-navegador.find_element(by=By.CSS_SELECTOR, value=".MuiInputBase-root input[name=password]").send_keys(senha)
-print("Senha OK!")
-sleep(1)
-
-pyautogui.press('tab')
-pyautogui.press('space')
-print("Online!")
-sleep(1)
-
-navegador.find_element(by=By.CSS_SELECTOR, value=".MuiButton-fullWidth").click()
-print("Enter clicado!")
-sleep(2)
 
 
-# CADASTRO DE ITENS
-navegador.get(url=link_cadastro)
-print("Acesso pagina de cadastro")
-sleep(2)
-#Clica em add material
-navegador.find_element(by=By.XPATH, value='//*[@id="root"]/div/div/main/div[2]/div/div[11]/div').click()
-sleep(1)
-
-if len(navegador.find_elements(by=By.XPATH, value='/html/body/div[4]/div[3]/div/div[3]/div/div/button/span[1]')) != 0:
-        sleep(2)
-        navegador.find_element(by=By.XPATH, value='/html/body/div[4]/div[3]/div/div[3]/div/div/button/span[1]').click()
-else:
-        pass
-print('propaganda ok')
-sleep(2)
-
-for i, material in enumerate(df['Material']):
-        medida = df.loc[i, 'Unidade de Medida']
-        custo = df.loc[i, 'Custo Unitário ']
-        print(material)
-        print(medida)
-        print(custo)
-        #Novo arquivo
-        navegador.find_element(by=By.ID, value="add-materials").click()
-        sleep(2)
-        print('new material')
-        #Inserir material
-        navegador.find_element(by=By.ID, value="material-description").send_keys(material)
-        print('material ok')
-        sleep(2)
-        pyautogui.press('tab')
-        #Inserir custo
-        navegador.find_element(by=By.NAME, value='standard-cost').send_keys(custo)
-        print('custo ok')
-        sleep(2)
-        pyautogui.press('tab')
-        #Inserir medida
-        element = navegador.find_elements(by=By.CLASS_NAME, value='jss46')
-        print(len(element))
-        element[2].send_keys(medida)
-        sleep(2)
-        pyautogui.press('down')
-        pyautogui.press('enter')
-        print('medida ok')
-        #apertar botao complete
-        pyautogui.press('tab')
-        pyautogui.press('tab')
-        pyautogui.press('tab')
-        pyautogui.press('enter')
 
 
-#print("Material cadastrado: {}, R${}, UN{}".format(material, custo, medida))
+mt5.initialize(server='ICMarketsSC-Demo', login=, password='')
+if not mt5.initialize():
+    print("initialize() failed")
+    mt5.shutdown()
+
+''' keys=["Open", "High", "Low", "Close"] candle
+
+# extrair indicador : rsi, media movel
+
+#
+#Fazer uma carteira de ativos - coletar os preços de: abretura, alto, baixo e fechamento.
+dias = 1000  #maximo historico possivel
+timezone = pytz.timezone("Etc/UTC")
+data_from = datetime(2020, 1, 10)
+data_to = datetime(2022, 2, 12)
+
+#while True:
+ticks = mt5.copy_ticks_range('BTCUSD', mt5.TIMEFRAME_M5, data_from, data_to, dias)
+x = pd.DataFrame(ticks)
+x['time'] = pd.to_datetime(x['time'], unit='s')
+print(x.head(10))
+    #x.set_index(x['time'], inplace=True)
+    #x.drop(['tick_volume', 'spread', 'real_volume'], axis=1, inplace=True)
+    #print(pd.DataFrame(x.iloc[-1]).T)
+    #pd.DataFrame(x.iloc[-1]).T.to_csv('DF_EURUSD.csv', mode='a', header=False, index=False) #index=False columns=['Propriedade','Valor']
+    #time.sleep(1)
+'''
+    #salvar em arquivo continuamente
+
+while True:
+    rates_cota = mt5.copy_rates_from_pos(, mt5.TIMEFRAME_D1, 0, 10)
+    data = pd.DataFrame(rates_cota)
+    data.set_index(data['time'], inplace=True)  # coloca a coluna time como indice
+    data.drop(['time'], axis=1, inplace=True)  # apaga a coluna time
+    data['time'] = pd.to_datetime(data['time'], unit='s')
+    print('O valor do close é: ', pd.DataFrame(data.iloc[-1]).T) #só os preços fechados print('O valor do close é: ', x['close'].iloc[-1])
+    pd.DataFrame(data.iloc[-1]).T.to_csv('DaDOS_PREcOS.csv', mode='a', header=False, index=False)
+    time.sleep(1)
+
+mt5.shutdown()
+
+'''
+lista = list(x)
+coluna = []
+for col in lista:
+    coluna.append(col)
+print(coluna)
+
+#salvar em arquivo continuamente
+dias = 100
+data = time.time()
+while True:
+    x = mt5.copy_rates_from('EURUSD', mt5.TIMEFRAME_M5, data, dias)
+    x = pd.DataFrame(x)
+    x['time'] = pd.to_datetime(x['time'], unit='s')
+    print('O valor do close é: ', pd.DataFrame(x.iloc[-1]).T) #só os preços fechados: print('O valor do close é: ', x['close'].iloc[-1])
+    pd.DataFrame(x.iloc[-1]).T.to_csv('DaDOS_PREcOS.csv', mode='a', header=False, index=False)
+    time.sleep(1)
 
 
+#d = mt5.terminal_info() #Obtém o estado e os parâmetros do terminal MetaTrader 5 conectado
+#d = d._asdict() #transforma em dicionario
+
+# coletar informações detalhadas
+ativos = 'EURUSD'
+info = mt5.symbol_info(ativos)
+dinfo = info._asdict()
+
+#transformar informações de ativos em dataframe , select e visible = true 
+df = pd.DataFrame(list(dinfo.items()), columns=['Propriedade','Valor'])
+print(df)
+
+for p in dinfo:
+    print("{} = {}".format(p, dinfo[p]))
+
+ativos = mt5.symbols_get()
+lista = []
+for ativo in ativos:
+    lista.append(ativo.name)
+print(len(lista))
+
+ativo = 'EURUSD'
+date = datetime(2021, 1, 2)
+flag = mt5.COPY_TICKS_ALL
+dados = mt5.copy_ticks_from(ativo, date, 10, flag) #Recebe ticks do terminal MetaTrader 5, a partir da data especificada
+df = pd.DataFrame(dados)
+print(df)
+#df.describe(include='all')
+
+mt5.shutdown()
+
+# plotamos os ticks no gráfico
+plt.plot(dados['time'], dados['ask'], 'r-', label='ask')
+plt.plot(dados['time'], dados['bid'], 'b-', label='bid')
+
+# exibimos rótulos
+plt.legend(loc='upper left')
+
+# adicionamos cabeçalho
+plt.title('EURUSD')
+
+# mostramos o gráfico
+plt.show()
+'''
